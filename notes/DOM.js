@@ -22,3 +22,18 @@ document
 //Manipulating CSS Styles
 document.querySelector(/* css selector */).style.backgroundColor = "#60b347"; // value should be a string
 document.querySelector(".number").style.width = "30rem";
+
+//better way is by creating css classes then add and remove them when needed with js
+htmlElement.classList.add("hidden");
+htmlElement.classList.remove("hidden");
+
+//handling key events : global events
+
+//keydown : when we press  ,keypress :keep pressing ,keyup:unpress
+
+// here browser will always pass the event to our callback; but it will be ignored beacause we didnt handle it
+document.addEventListener("keydown", function () {});
+//to catch the event that happened, we can pass the event to the callback
+document.addEventListener("keydown", function (event) {
+  console.log(event);
+});
