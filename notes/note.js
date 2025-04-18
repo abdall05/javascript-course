@@ -4,3 +4,4 @@
 //starting from ES6 : Modern javascript
 // USE MDN for documentation
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript
+//DRY principle : don't repeat yourself -> refactor code
