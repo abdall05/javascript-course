@@ -26,6 +26,7 @@ document.querySelector(".number").style.width = "30rem";
 //better way is by creating css classes then add and remove them when needed with js
 htmlElement.classList.add("hidden");
 htmlElement.classList.remove("hidden");
+htmlElement.classList.toggle("hidden"); //add if not exist else remove
 
 //handling key events : global events
 
@@ -37,3 +38,6 @@ document.addEventListener("keydown", function () {});
 document.addEventListener("keydown", function (event) {
   console.log(event);
 });
+//select by id
+
+document.getElementById("id"); //without the #
