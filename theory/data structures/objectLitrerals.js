@@ -141,7 +141,7 @@ for (const odd of odds) {
   oddSum += odd;
 }
 const oddAverage = oddSum / odds.length;
-
+const oddAverage2 = odds.reduce((acc, odd) => acc + odd) / odds.length;
 const scorers = {};
 
 for (const scorer of game.scored) scorers[scorer] = (scorers[scorer] || 0) + 1;

@@ -32,7 +32,7 @@ numGuests = restaurant.numGuests || 10;
 //works with Nullish values instead of falsy values
 //Nullish values -> null and undefined
 
-numGuests = restaurant.numGuests ?? 10;
+numGuests = restaurant.numGuests ?? 10; //similar to OR but with nullish values instead
 //short circuited if left operand is Nullish else execute right
 
 //Logical Assignment Operators (ES2021)

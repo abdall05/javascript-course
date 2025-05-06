@@ -24,7 +24,7 @@ createBooking = function (
 
 //default values can be any expresson
 //can compute a parameter from a previous one price = numPassengers * 200
-// to skip a parameter , pass default as argument
+// to skip a parameter , pass undefined as argument
 createBooking("LH123", undefined, 100);
 
 //Passing Arguments:Value vs Reference
@@ -163,7 +163,9 @@ document.querySelector(".buy").addEventListener("click", lufthansa.buyPlane);
 //"this" will point to the DOM object (button) ; function is called with the object
 //to solve this we can use bind : bind the function to our object
 
-document.querySelector(".buy").addEventListener;
+document
+  .querySelector(".buy")
+  .addEventListener("click", lufthansa.buyPlane.bind(lufthansa));
 
 //partial application : preset parameters
 //creating a specific function from a general one
