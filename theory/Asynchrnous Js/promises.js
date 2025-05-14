@@ -212,3 +212,450 @@ const whereAmI = function (lat, lng) {
     })
     .catch((err) => console.log(err));
 };
+
+//Building a promise
+//primise takes a function as an argument(executor function)
+//this function takes 2 arguments : resolve and reject
+//resolve : function to be called when the async task is finished successfully
+//reject : function to be called when the async task fails
+//the executor function will excecute the async behavior
+//should produce a future result value
+const lotteryPromise = new Promise(function (resolve, reject) {
+  //simulating async behavior
+  console.log("Lotter draw is happening");
+  setTimeout(() => {
+    if (Math.random() >= 0.5) resolve("You Win");
+    else reject(new Error("You Lost!"));
+  }, 2000);
+});
+lotteryPromise
+  .then((res) => console.log(res))
+  .catch((err) => console.error(err));
+
+//we usually build promises if we want to convert old callback based async behavior to promise based
+//thats how fetch is implemented behind the scenes.
+
+//we mostly consume promises.
+// promisify setTimeout
+//we will create a function that returns a promise for that
+
+const wait = function (seconds) {
+  return new Promise(function (resolve) {
+    // we don't need the reject here
+    setTimeout(resolve, seconds * 1000); // no results is needed
+  });
+};
+wait(5).then(console.log("finished waiting for 5 seconds"));
+
+//avoid callback hell
+
+wait(1)
+  .then(() => {
+    //do 1
+    return wait(1);
+  })
+  .then(() => {
+    // do 2
+    return wait(1);
+  });
+
+//create immediately a fulfilled or rejected Promise
+
+Promise.resolve("fulfilled Promise ").then((value) => console.log(value));
+Promise.reject(new Error("Rejected promise")).catch((err) => console.log(err));
+
+//Promisify the Geolocation API
+
+// building the promise
+const getLocationPromise = function () {
+  return new Promise(function (resolve, reject) {
+    //executor function
+    if (!navigator.geolocation)
+      reject(new Error("Geolocation is not supported by your browser"));
+    else {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        resolve(coords);
+      }, reject); //error will be passed as arg by navigator.geolocation.getCurrentPosition
+    }
+  });
+};
+
+//Consuming the promise
+const getLocation = function () {
+  getLocationPromise()
+    .then((coords) => console.log(coords))
+    .catch((err) => err);
+};
+console.log(getLocation());
+
+const whereAmI2 = function () {
+  getLocationPromise()
+    .then(({ lat, lng }) =>
+      fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}`
+      )
+    )
+    .then((response) => {
+      if (!response.ok) {
+        if (response.status == 403)
+          throw new Error("Make only 3 requests per second!");
+        throw new Error(
+          "Cannot find the country with the provided lat and lng!"
+        );
+      }
+
+      return response.json();
+    })
+    .then(({ city, countryName }) => {
+      //Object destructuring
+      console.log(`You are in ${city}, ${countryName}`);
+      return getJSON(
+        `https://countries-api-836d.onrender.com/countries/name/${countryName}`
+      );
+    })
+    .then((data) => {
+      renderCountry(data[0]);
+      const neighbour = data[0].borders?.[0];
+      if (!neighbour) throw new Error("Neighbour is undefined");
+      return getJSON(
+        `https://countries-api-836d.onrender.com/countries/alpha/${neighbour}`
+      );
+    })
+    .then((data) => renderCountry(data, "neighbour"))
+    .catch((err) => {
+      renderError(err.message);
+
+      console.log(err);
+    })
+    .finally(() => {
+      countriesContainer.style.opacity = 1;
+    });
+};
+
+///////////////////////////////////////
+// Coding Challenge #2
+
+/* 
+Build the image loading functionality that I just showed you on the screen.
+
+Tasks are not super-descriptive this time, so that you can figure out some stuff on your own. Pretend you're working on your own 😉
+
+PART 1
+1. Create a function 'createImage' which receives imgPath as an input. This function returns a promise which creates a new image (use document.createElement('img')) and sets the .src attribute to the provided image path. When the image is done loading, append it to the DOM element with the 'images' class, and resolve the promise. The fulfilled value should be the image element itself. In case there is an error loading the image ('error' event), reject the promise.
+
+If this part is too tricky for you, just watch the first part of the solution.
+
+PART 2
+2. Comsume the promise using .then and also add an error handler;
+3. After the image has loaded, pause execution for 2 seconds using the wait function we created earlier;
+4. After the 2 seconds have passed, hide the current image (set display to 'none'), and load a second image (HINT: Use the image element returned by the createImage promise to hide the current image. You will need a global variable for that 😉);
+5. After the second image has loaded, pause execution for 2 seconds again;
+6. After the 2 seconds have passed, hide the current image.
+
+TEST DATA: Images in the img folder. Test the error handler by passing a wrong image path. Set the network speed to 'Fast 3G' in the dev tools Network tab, otherwise images load too fast.
+
+GOOD LUCK 😀
+*/
+//promisifying img loading
+const createImage = function (imgPath) {
+  return new Promise(function (resolve, reject) {
+    const img = document.createElement("img");
+    img.src = imgPath;
+
+    const onLoad = (event) => {
+      img.removeEventListener("load", onLoad);
+      img.removeEventListener("error", onError);
+      document.querySelector(".images").insertAdjacentElement("beforeend", img);
+      resolve(img);
+    };
+    const onError = (event) => {
+      img.removeEventListener("load", onLoad);
+      img.removeEventListener("error", onError);
+      reject(new Error("Error while loading the image!"));
+    };
+    img.addEventListener("load", onLoad);
+    img.addEventListener("error", onError);
+  });
+};
+let currentImage;
+
+createImage("img/img-1.jpg")
+  .then((img) => {
+    currentImage = img;
+    return wait(2);
+  })
+  .then(() => {
+    // wait doesnt have a fulfill value ()
+    currentImage.style.display = "none";
+    return createImage("img/img-2.jpg");
+  })
+  .then((img) => {
+    currentImage = img;
+    return wait(2);
+  })
+  .then(() => (currentImage.style.display = "none"))
+  .catch((err) => console.log(err));
+// const wait = function (seconds) {
+//   return new Promise(function (resolve) {
+//     setTimeout(resolve, 1000 * seconds);
+//   });
+// };
+
+//Consuming Promises With Async/Await
+const whereAmI3 = async function (country) {
+  //will run in the background and returns a promise
+
+  const promuseResult = await fetch(
+    `https://countries-api-836d.onrender.com/countries/name/${country}`
+  ); // waits until the results of the promise is fulfilled
+  //doesnt block the main thread of execution (function is executed in the background)
+  console.log(promuseResult);
+
+  //fetch(
+  //   `https://countries-api-836d.onrender.com/countries/name/${country}`
+  // ).then(res=>console.log(res));
+
+  const data = await promuseResult.json();
+  renderCountry(data[0]);
+};
+//no need to chain then and catch
+//looks like synchronous code buts its asynchronous in reality
+// whereAmI3("Tunisia");
+// console.log("This statement will be executed first.");
+
+const whereAmI4 = async function () {
+  const { lat, lng } = await getLocationPromise();
+  const countryNameResult = await fetch(
+    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}`
+  );
+  const { countryName } = await countryNameResult.json();
+  const promuseResult = await fetch(
+    `https://countries-api-836d.onrender.com/countries/name/${countryName}`
+  );
+  const data = await promuseResult.json();
+  renderCountry(data[0]);
+};
+whereAmI4();
+
+//No error handling yet
+
+//Error Handling With try...catch ; can be used with regular errors not only async/await
+
+try {
+  const x = 1;
+  x = 2;
+} catch (err) {
+  console.log(err.message);
+}
+const whereAmI5 = async function () {
+  try {
+    const { lat, lng } = await getLocationPromise();
+    //no need to throw error here. if it fails ; error passed to reject will be thrown
+    const countryNameResult = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}`
+    );
+    if (!countryNameResult.ok) throw new Error("Problem getting location data");
+    // fetch is a special case ; we have to handle error http response (not rejected)
+    const { countryName } = await countryNameResult.json();
+    const countryResults = await fetch(
+      `https://countries-api-836d.onrender.com/countries/name/${countryName}`
+    );
+    if (!countryResults.ok) throw new Error("Problem getting country data");
+    const data = await countryResults.json();
+    renderCountry(data[0]);
+  } catch (err) {
+    console.log(err);
+  }
+};
+whereAmI5();
+
+//Returning Values from Aync functions
+const whereAmI6 = async function () {
+  try {
+    const { lat, lng } = await getLocationPromise();
+    //no need to throw error here. if it fails ; error passed to reject will be thrown
+    const countryNameResult = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}`
+    );
+    if (!countryNameResult.ok) throw new Error("Problem getting location data");
+    // fetch is a special case ; we have to handle error http response (not rejected)
+    const { city, countryName } = await countryNameResult.json();
+    const countryResults = await fetch(
+      `https://countries-api-836d.onrender.com/countries/name/${countryName}`
+    );
+    if (!countryResults.ok) throw new Error("Problem getting country data");
+    const data = await countryResults.json();
+    renderCountry(data[0]);
+    return `You are in ${city}, ${countryName}`; // this will become the fulfilled value
+  } catch (err) {
+    console.log(err);
+    throw err; // if error ; rejected promise with this value will be returned
+  }
+}; //if error -> rejected value
+//if no return value -> fulfilled and value is undefined
+
+// whereAmI6()
+//   .then((city) => console.log(city))
+//   .catch((err) => console.log(err));
+//mixing old and newer why of consuming promises
+//how to avoid that ? we can only use await inside async function
+//use (IIFE)
+(function () {})();
+
+(async function () {
+  try {
+    const city = await whereAmI6();
+    console.log(city);
+  } catch (err) {
+    console.log(err);
+  }
+})();
+
+//Running Promises in Parallel
+const get3countries = async function (c1, c2, c3) {
+  try {
+    // const [data1] = await getJSON(
+    //   `https://countries-api-836d.onrender.com/countries/name/${c1}`
+    // );
+    // const [data2] = await getJSON(
+    //   `https://countries-api-836d.onrender.com/countries/name/${c1}`
+    // );
+    // const [data3] = await getJSON(
+    //   `https://countries-api-836d.onrender.com/countries/name/${c1}`
+    // );
+    // console.log[(data1.countryName, data2.countryName, data2.countryName)];
+    //we can run all in parallel (independant promises)
+    const data = await Promise.all([
+      getJSON(`https://countries-api-836d.onrender.com/countries/name/${c1}`),
+      getJSON(`https://countries-api-836d.onrender.com/countries/name/${c2}`),
+      getJSON(`https://countries-api-836d.onrender.com/countries/name/${c3}`),
+    ]);
+    console.log(data);
+    console.log(data.map((countryData) => countryData[0].capital));
+  } catch (err) {
+    console.log(err);
+  }
+};
+get3countries("Tunisia", "Algeria", "Palestine");
+//if 1 promise rejects the whole promise rejects
+
+//Other Promise Combinators
+
+//Promise.race() // similar to all but returns the first settled promise
+
+(async function (c1, c2, c3) {
+  {
+    try {
+      const data = await Promise.race([
+        getJSON(`https://countries-api-836d.onrender.com/countries/name/${c1}`),
+        getJSON(`https://countries-api-836d.onrender.com/countries/name/${c2}`),
+        getJSON(`https://countries-api-836d.onrender.com/countries/name/${c3}`),
+      ]);
+      console.log(data[0].capital);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+})("Tunisia", "Algeria", "Palestine");
+
+//usefull to implement timeout function
+
+const timeout = function (ms) {
+  return new Promise(function (_, reject) {
+    //resolve is not needed
+    setTimeout(() => reject(new Error("Request took too long!")), ms);
+  });
+};
+Promise.race([
+  getJSON(`https://countries-api-836d.onrender.com/countries/name/Tunisia`),
+  timeout(1000),
+])
+  .then((res) => console.log(res[0].capital))
+  .catch((err) => console.log(err));
+
+//Promise.allSettled retunrs all promises when settled (fulfilled or rejected)
+
+//Promise.any (ES2021) returns the first fulfilled promise (ignore rejected)
+//if all rejected -> rejected Promise
+
+///////////////////////////////////////
+// Coding Challenge #3
+
+/* 
+PART 1
+Write an async function 'loadNPause' that recreates Coding Challenge #2, this time using async/await (only the part where the promise is consumed). Compare the two versions, think about the big differences, and see which one you like more.
+Don't forget to test the error handler, and to set the network speed to 'Fast 3G' in the dev tools Network tab.
+
+PART 2
+1. Create an async function 'loadAll' that receives an array of image paths 'imgArr';
+2. Use .map to loop over the array, to load all the images with the 'createImage' function (call the resulting array 'imgs')
+3. Check out the 'imgs' array in the console! Is it like you expected?
+4. Use a promise combinator function to actually get the images from the array 😉
+5. Add the 'paralell' class to all the images (it has some CSS styles).
+
+TEST DATA: ['img/img-1.jpg', 'img/img-2.jpg', 'img/img-3.jpg']. To test, turn off the 'loadNPause' function.
+
+GOOD LUCK 😀
+*/
+// const createImage = function (imgPath) {
+//   return new Promise(function (resolve, reject) {
+//     const img = document.createElement("img");
+//     img.src = imgPath;
+
+//     const onLoad = (event) => {
+//       img.removeEventListener("load", onLoad);
+//       img.removeEventListener("error", onError);
+//       document.querySelector(".images").insertAdjacentElement("beforeend", img);
+//       resolve(img);
+//     };
+//     const onError = (event) => {
+//       img.removeEventListener("load", onLoad);
+//       img.removeEventListener("error", onError);
+//       reject(new Error("Error while loading the image!"));
+//     };
+//     img.addEventListener("load", onLoad);
+//     img.addEventListener("error", onError);
+//   });
+// };
+// let currentImage;
+
+// createImage("img/img-1.jpg")
+//   .then((img) => {
+//     currentImage = img;
+//     return wait(2);
+//   })
+//   .then(() => {
+//     // wait doesnt have a fulfill value ()
+//     currentImage.style.display = "none";
+//     return createImage("img/img-2.jpg");
+//   })
+//   .then((img) => {
+//     currentImage = img;
+//     return wait(2);
+//   })
+//   .then(() => (currentImage.style.display = "none"))
+//   .catch((err) => console.log(err));
+
+const loadNPause = async function () {
+  try {
+    let img = await createImage("img/img-1.jpg");
+    await wait(2);
+    img.style.display = "none";
+    img = await createImage("img/img-2.jpg");
+    await wait(2);
+    img.style.display = "none";
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const loadAll = async function (imgArr) {
+  const images = await Promise.all(
+    imgArr.map((imgPath) => createImage(imgPath))
+  );
+  images.forEach((img) => img.classList.add(paralell));
+};

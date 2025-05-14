@@ -27,6 +27,26 @@ el.addEventListener("load", () => {
 //2-if no code is being executed -> event loop tick (from callback queue)
 
 //Exception:
-//callbacks related to promises (fetch) doesnt go to callback queue
+//callbacks related to promises (fetch) doesnt go to callback queue / also called macrotasks queue
 //microtasks queue : has priority over the callbackQueue
 //microtasks queue can starve the callbackQueue
+
+console.log("Test start");
+setTimeout(() => {
+  console.log("0 sec timer");
+}, 0);
+Promise.resolve("Resolved promise 1").then((res) => console.log(res)); // creates a successful promise
+console.log("Test end");
+
+//Promise callback is executed before the setTimeout callback
+//because the promise callback is in the microtask queue and setTimeout is in the callback queue
+
+console.log("Test start");
+setTimeout(() => {
+  console.log("0 sec timer");
+}, 0);
+Promise.resolve("Resolved promise 1").then((res) => {
+  for (let i = 0; i < 1000000000; i++) {} //blocking code
+  console.log(res);
+}); // creates a successful promise
+console.log("Test end");
