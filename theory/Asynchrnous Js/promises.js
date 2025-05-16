@@ -245,7 +245,7 @@ const wait = function (seconds) {
     setTimeout(resolve, seconds * 1000); // no results is needed
   });
 };
-wait(5).then(console.log("finished waiting for 5 seconds"));
+wait(5).then(() => console.log("finished waiting for 5 seconds"));
 
 //avoid callback hell
 
@@ -274,6 +274,7 @@ const getLocationPromise = function () {
       reject(new Error("Geolocation is not supported by your browser"));
     else {
       navigator.geolocation.getCurrentPosition((position) => {
+        // could have directly passed resolve as a cb; just did a mapping
         const coords = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -545,7 +546,7 @@ get3countries("Tunisia", "Algeria", "Palestine");
 
 //Other Promise Combinators
 
-//Promise.race() // similar to all but returns the first settled promise
+//Promise.race() // similar to all but returns the first settled promise (fulfilled or reject)
 
 (async function (c1, c2, c3) {
   {
