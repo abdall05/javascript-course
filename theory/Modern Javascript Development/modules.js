@@ -45,3 +45,29 @@
 //outside of async function
 const res = await fetch(`https://jsonplaceholder.typicode.com/posts`);
 const data = await res.json();
+
+//The Module Pattern : before ES6
+//IIFE : commonly used to implement this pattern
+//used to created encapsulated reusable code with private and public members
+//+:organizing code ; avoiding polluting the global namespace
+
+const MyModule = (function () {
+  // Private variables and functions
+  const privateVar = "I'm private";
+
+  function privateFunction() {
+    console.log("Accessing private function");
+  }
+
+  // Public API //works thanks to closures; publicMethod was created inside the scope of the IIFE
+  //will have access to EV of te IIFE even after it had returned
+  return {
+    publicMethod: function () {
+      console.log("Accessing public method");
+      privateFunction(); // Accessing private inside public
+    },
+    getPrivateVar: function () {
+      return privateVar;
+    },
+  };
+})();
