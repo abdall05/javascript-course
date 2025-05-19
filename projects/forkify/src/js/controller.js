@@ -3,6 +3,7 @@ import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import searchResultsView from './views/searchResultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarksView from './views/bookmarksView.js';
 //polyfill
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
@@ -17,6 +18,7 @@ const controlRecipes = async function () {
     const id = window.location.hash.slice(1);
     if (!id) return;
     searchResultsView.render(model.getSearchResultsPage());
+    bookmarksView.render(model.state.bookmarks);
     recipeView.renderSpinner();
     await model.loadRecipe(id);
     const { recipe } = model.state;
@@ -67,20 +69,16 @@ const controlServings = function (action) {
   recipeView.render(model.state.recipe);
 };
 
-// const renderRecipe = function (recipe) {};
-
-//Listen for hashchange event (link changes) + load event
-
-// window.addEventListener('hashchange', async function () {
-//   const recipeId = window.location.hash.slice(1);
-//   getRecipe(recipeId);
-// });
-
-//load event ; /id
+const controlBookmark = function () {
+  model.toggleBookmark(model.state.recipe);
+  bookmarksView.render(model.state.bookmarks);
+  recipeView.render(model.state.recipe);
+};
 
 const init = function () {
   recipeView.addHandlerRender(controlRecipes); // subscribe controlRecipes to publisher (addHandlerRender)
   recipeView.addHandlerServings(controlServings);
+  recipeView.addHandlerBookmark(controlBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerPagination(controlPaginationHandler);
 };
