@@ -141,7 +141,7 @@ class RecipeView extends View {
                 ingredient.quantity
               )}</div>
               <div class="recipe__description">
-                <span class="recipe__unit">${ingredient.unit}</span>
+                <span class="recipe__unit">${ingredient.unit || ''}</span>
                 ${ingredient.description}
               </div>
             

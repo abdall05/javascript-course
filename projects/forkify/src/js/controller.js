@@ -4,23 +4,22 @@ import searchView from './views/searchView.js';
 import searchResultsView from './views/searchResultsView.js';
 import paginationView from './views/paginationView.js';
 import bookmarksView from './views/bookmarksView.js';
+import addRecipeView from './views/addRecipeView.js';
 //polyfill
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 
-if (module.hot) {
-  //Parcel feature
-  module.hot.accept();
-}
 const controlRecipes = async function () {
   //subscriber
   try {
     const id = window.location.hash.slice(1);
+    console.log(id);
     if (!id) return;
     searchResultsView.render(model.getSearchResultsPage());
     bookmarksView.render(model.state.bookmarks);
     recipeView.renderSpinner();
     await model.loadRecipe(id);
+    console.log(model);
     const { recipe } = model.state;
     //2-Rendering recipe
     recipeView.render(recipe);
@@ -38,7 +37,7 @@ const controlSearchResults = async function () {
     searchResultsView.render(model.getSearchResultsPage());
     controlPagination();
   } catch (err) {
-    console.log(err);
+    searchResultsView.renderError();
   }
 };
 const controlPagination = function () {
@@ -71,16 +70,36 @@ const controlServings = function (action) {
 
 const controlBookmark = function () {
   model.toggleBookmark(model.state.recipe);
+  model.storeBookmarks();
   bookmarksView.render(model.state.bookmarks);
   recipeView.render(model.state.recipe);
 };
+const controlAddRecipe = async function (recipeData) {
+  try {
+    await model.uploadRecipe(recipeData);
+    bookmarksView.render(model.state.bookmarks);
+    recipeView.render(model.state.recipe);
+    addRecipeView.renderMessage();
+    setTimeout(() => {
+      addRecipeView.toggleWindow();
+      debugger;
+      addRecipeView.render();
+    }, 2500);
+  } catch (err) {
+    addRecipeView.renderError(err.message);
+  }
+};
 
 const init = function () {
+  model.clearStorage();
+  model.loadBookmarks();
+  bookmarksView.render(model.state.bookmarks);
   recipeView.addHandlerRender(controlRecipes); // subscribe controlRecipes to publisher (addHandlerRender)
   recipeView.addHandlerServings(controlServings);
   recipeView.addHandlerBookmark(controlBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerPagination(controlPaginationHandler);
+  addRecipeView.addHandlerUpload(controlAddRecipe);
 };
 
 init();
