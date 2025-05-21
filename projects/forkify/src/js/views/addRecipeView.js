@@ -117,6 +117,8 @@ class AddRecipeView extends View {
       handler(data);
     });
   }
-  _generateMarkup() {}
+  _generateMarkup() {
+    return this._data;
+  }
 }
 export default new AddRecipeView();

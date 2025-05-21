@@ -5,6 +5,7 @@ import searchResultsView from './views/searchResultsView.js';
 import paginationView from './views/paginationView.js';
 import bookmarksView from './views/bookmarksView.js';
 import addRecipeView from './views/addRecipeView.js';
+import { MESSAGE_DISPLAY_DURATION } from './config.js';
 //polyfill
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
@@ -76,22 +77,24 @@ const controlBookmark = function () {
 };
 const controlAddRecipe = async function (recipeData) {
   try {
+    addRecipeView.renderSpinner();
     await model.uploadRecipe(recipeData);
     bookmarksView.render(model.state.bookmarks);
     recipeView.render(model.state.recipe);
     addRecipeView.renderMessage();
-    setTimeout(() => {
-      addRecipeView.toggleWindow();
-      debugger;
-      addRecipeView.render();
-    }, 2500);
+
+    //change ID in URL
+    window.history.pushState(null, '', `#${model.state.recipe.id}`);
   } catch (err) {
     addRecipeView.renderError(err.message);
+  } finally {
+    setTimeout(() => {
+      addRecipeView.render();
+    }, MESSAGE_DISPLAY_DURATION);
   }
 };
 
 const init = function () {
-  model.clearStorage();
   model.loadBookmarks();
   bookmarksView.render(model.state.bookmarks);
   recipeView.addHandlerRender(controlRecipes); // subscribe controlRecipes to publisher (addHandlerRender)
